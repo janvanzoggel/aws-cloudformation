@@ -1,0 +1,43 @@
+Terra10NetworkLoadBalancer:
+  Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  Properties:
+    Name: t10-networkloadbalancer
+    Scheme: internet-facing
+    Subnets: !Ref Terra10Subnet
+    Type: network
+    Tags:
+    - Key: Name
+      Value: t10-networklb
+  Terra10NetworkLoadBalancerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: t10-networklb-target
+      Port: 443
+      Protocol: TCP
+      VpcId: !ImportValue t10-vpc-id
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: 60
+      Targets:
+      - Id: !Ref Terra10EC2Instance1
+        Port: 443
+      - Id: !Ref Terra10EC2Instance2
+        Port: 443
+      Tags:
+      - Key: Name
+        Value: t10-networklb-target
+  Terra10NetworkLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref Terra10NetworkLoadBalancerTargetGroup
+      LoadBalancerArn: !Ref Terra10NetworkLoadBalancer
+      Port: '443'
+      Protocol: TCP
+  Terra10NetworkLoadBalancerListenerCert:
+    Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
+    Properties:
+      Certificates:
+      - CertificateArn: arn:aws:acm:eu-west-1:xxxaccountxxx:certificate/123456....
+      ListenerArn: !Ref Terra10NetworkLoadBalancerListener
